@@ -12,5 +12,5 @@ services:
     volumes:
       - ./vw-data:/data
     ports:
-      - "80:80"
+      - "85:85"
       - "3012:3012" # WebSocket
