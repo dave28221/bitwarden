@@ -6,7 +6,7 @@ services:
     container_name: bitwarden
     restart: always
     ports:
-      - "8080:80"
+      - "8085:80"
       - "8443:443"
     volumes:
       - ./bw-data:/etc/bitwarden
