@@ -2,42 +2,70 @@ version: '3.8'
 
 services:
   bitwarden:
-    image: bitwarden/server:latest # Changed from bitwarden/self-host:latest
+    image: bitwarden/server:latest # Corrected image name
     container_name: bitwarden
     restart: always
-    ports:
-      - "8085:80"
-      - "8443:443"
+    # IMPORTANT: Remove or comment out 'ports' if Traefik (or another proxy) is handling ports 80/443
+    # If Traefik is active and listening on 80/443 (as your 'docker ps' indicated),
+    # this container should NOT expose 80/443 directly to the host.
+    # Coolify typically handles the routing internally via Docker networks and labels.
+    # If you still need direct access for testing without Traefik, uncomment and change ports:
+    # ports:
+    #   - "8080:80"   # Maps container port 80 to host port 8080
+    #   - "8443:443"  # Maps container port 443 to host port 8443
     volumes:
-      - ./bw-data:/etc/bitwarden
-      - ./logs:/var/log/bitwarden
+      - ./bw-data:/etc/bitwarden # Persistent storage for all Bitwarden data
+      - ./logs:/var/log/bitwarden # Volume for Bitwarden application logs
     environment:
       # --- REQUIRED BITWARDEN CONFIGURATION ---
+      # This URI should match the domain you configure in Coolify for Bitwarden (e.g., https://bitwarden.yourdomain.com)
       - globalSettings__baseServiceUri__vault=https://bitwarden.yourdomain.com # REPLACE with your actual domain
-      - globalSettings__internalServiceUri__vault=http://postgresql-database-bitwarden # Internal Docker network name for the database service
+      # Internal Docker network name for the database service - must match the 'postgresql-database-bitwarden' service name below
+      - globalSettings__internalServiceUri__vault=http://postgresql-database-bitwarden
       - globalSettings__installationId=YOUR_INSTALLATION_ID_HERE # **REPLACE WITH YOUR ID FROM bitwarden.com/host**
       - globalSettings__installationKey=YOUR_INSTALLATION_KEY_HERE # **REPLACE WITH YOUR KEY FROM bitwarden.com/host**
 
       # --- DATABASE CONFIGURATION ---
+      # Ensure 'Host' matches the 'postgresql-database-bitwarden' service name
       - globalSettings__sqlServer__connectionString=Host=postgresql-database-bitwarden;Port=5432;Database=bitwarden_vault;Username=postgres;Password=sCMH1tWAZ5HpIoxC4z3Bpe9Jr46zNFPkjqFXQphT9IhD7jtRHZ1Nt1JjVmUyR0Xe;Pooling=true;Encrypt=true;TrustServerCertificate=true;
-      - globalSettings__database__type=PostgreSql
+      - globalSettings__database__type=PostgreSql # Specify PostgreSQL database type
+
+      # --- EMAIL (SMTP) CONFIGURATION (UNCOMMENT AND CONFIGURE IF NEEDED) ---
+      # - globalSettings__mail__smtp__host=smtp.your-email-provider.com
+      # - globalSettings__mail__smtp__port=587 # Or 465 for SMTPS
+      # - globalSettings__mail__smtp__ssl=true # Use 'true' for STARTTLS or SMTPS (465)
+      # - globalSettings__mail__smtp__username=your_smtp_username
+      # - globalSettings__mail__smtp__password=your_smtp_password
+      # - globalSettings__mail__replyToEmail=no-reply@yourdomain.com
+      # - globalSettings__mail__smtp__useDefaultCredentials=false
+
+      # --- ADMIN SETTINGS ---
+      # Add an admin email to access the admin portal after initial setup (optional, can be done via CLI later)
+      # - adminSettings__admins=your_admin_email@yourdomain.com # REPLACE with your desired admin email
+
+      # --- OTHER OPTIONAL SETTINGS ---
+      # - globalSettings__enableUpdateNotifications=true # Receive update notifications
+      # - globalSettings__disableUserRegistration=false # Set to 'true' to prevent new user sign-ups
+      # - globalSettings__yubico__clientId=YOUR_YUBICO_CLIENT_ID # For YubiKey integration
+      # - globalSettings__yubico__key=YOUR_YUBICO_KEY # For YubiKey integration
+      # - logLevel=info # Set logging level (trace, debug, info, warn, error, fatal)
 
     depends_on:
-      - postgresql-database-bitwarden
+      - postgresql-database-bitwarden # Ensure the database service starts before Bitwarden
 
-  postgresql-database-bitwarden:
-    image: postgres:16-alpine
-    container_name: bitwarden-db
+  postgresql-database-bitwarden: # Custom service name for the PostgreSQL database
+    image: postgres:16-alpine # Lightweight PostgreSQL image
+    container_name: bitwarden-db # You can keep this container name for clarity
     restart: always
     volumes:
-      - ./pg-data:/var/lib/postgresql/data
+      - ./pg-data:/var/lib/postgresql/data # Persistent storage for your PostgreSQL database files
     environment:
-      - POSTGRES_DB=bitwarden_vault
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=sCMH1tWAZ5HpIoxC4z3Bpe9Jr46zNFPkjqFXQphT9IhD7jtRHZ1Nt1JjVmUyR0Xe
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_DB=bitwarden_vault # The database name Bitwarden will connect to
+      - POSTGRES_USER=postgres      # The username you provided
+      - POSTGRES_PASSWORD=sCMH1tWAZ5HpIoxC4z3Bpe9Jr46zNFPkjqFXQphT9IhD7jtRHZ1Nt1JjVmUyR0Xe # The password you provided
+      - PGDATA=/var/lib/postgresql/data/pgdata # Recommended for explicit data directory inside volume
 
 volumes:
-  bw-data:
-  logs:
-  pg-data:
+  bw-data: # Declares the named volume for Bitwarden data
+  logs:    # Declares the named volume for Bitwarden logs
+  pg-data: # Declares t
