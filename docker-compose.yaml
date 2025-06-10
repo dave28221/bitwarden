@@ -1,17 +1,16 @@
-
 version: '3.8'
 
 services:
   bitwarden:
-    image: bitwarden/self-host:latest # Or a specific version like '2024.2.1' for stability
+    image: bitwarden/server:latest # Changed from bitwarden/self-host:latest
     container_name: bitwarden
     restart: always
     ports:
-      - "80:80"   # Maps host HTTP to container HTTP
-      - "443:443" # Maps host HTTPS to container HTTPS (assuming you'll handle SSL here or with a reverse proxy)
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./bw-data:/etc/bitwarden # Persistent storage for all Bitwarden data
-      - ./logs:/var/log/bitwarden # Volume for Bitwarden application logs
+      - ./bw-data:/etc/bitwarden
+      - ./logs:/var/log/bitwarden
     environment:
       # --- REQUIRED BITWARDEN CONFIGURATION ---
       - globalSettings__baseServiceUri__vault=https://bitwarden.yourdomain.com # REPLACE with your actual domain
@@ -20,46 +19,25 @@ services:
       - globalSettings__installationKey=YOUR_INSTALLATION_KEY_HERE # **REPLACE WITH YOUR KEY FROM bitwarden.com/host**
 
       # --- DATABASE CONFIGURATION ---
-      # Ensure 'Host' matches the 'postgresql-database-bitwarden' service name
       - globalSettings__sqlServer__connectionString=Host=postgresql-database-bitwarden;Port=5432;Database=bitwarden_vault;Username=postgres;Password=sCMH1tWAZ5HpIoxC4z3Bpe9Jr46zNFPkjqFXQphT9IhD7jtRHZ1Nt1JjVmUyR0Xe;Pooling=true;Encrypt=true;TrustServerCertificate=true;
-      - globalSettings__database__type=PostgreSql # Specify PostgreSQL database type
-
-      # --- EMAIL (SMTP) CONFIGURATION (UNCOMMENT AND CONFIGURE) ---
-      # - globalSettings__mail__smtp__host=smtp.your-email-provider.com
-      # - globalSettings__mail__smtp__port=587 # Or 465 for SMTPS
-      # - globalSettings__mail__smtp__ssl=true # Use 'true' for STARTTLS or SMTPS (465)
-      # - globalSettings__mail__smtp__username=your_smtp_username
-      # - globalSettings__mail__smtp__password=your_smtp_password
-      # - globalSettings__mail__replyToEmail=no-reply@yourdomain.com
-      # - globalSettings__mail__smtp__useDefaultCredentials=false
-
-      # --- ADMIN SETTINGS ---
-      # Add an admin email to access the admin portal after initial setup (optional, can be done via CLI)
-      # - adminSettings__admins=your_admin_email@yourdomain.com # REPLACE with your desired admin email
-
-      # --- OTHER OPTIONAL SETTINGS ---
-      # - globalSettings__enableUpdateNotifications=true # Receive update notifications
-      # - globalSettings__disableUserRegistration=false # Set to 'true' to prevent new user sign-ups
-      # - globalSettings__yubico__clientId=YOUR_YUBICO_CLIENT_ID # For YubiKey integration
-      # - globalSettings__yubico__key=YOUR_YUBICO_KEY # For YubiKey integration
-      # - logLevel=info # Set logging level (trace, debug, info, warn, error, fatal)
+      - globalSettings__database__type=PostgreSql
 
     depends_on:
-      - postgresql-database-bitwarden # Ensure the database service starts before Bitwarden
+      - postgresql-database-bitwarden
 
-  postgresql-database-bitwarden: # Custom service name for the PostgreSQL database
-    image: postgres:16-alpine # Lightweight PostgreSQL image
-    container_name: bitwarden-db # You can keep this container name for clarity
+  postgresql-database-bitwarden:
+    image: postgres:16-alpine
+    container_name: bitwarden-db
     restart: always
     volumes:
-      - ./pg-data:/var/lib/postgresql/data # Persistent storage for your PostgreSQL database files
+      - ./pg-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=bitwarden_vault # The database name Bitwarden will connect to
-      - POSTGRES_USER=postgres      # The username you provided
-      - POSTGRES_PASSWORD=sCMH1tWAZ5HpIoxC4z3Bpe9Jr46zNFPkjqFXQphT9IhD7jtRHZ1Nt1JjVmUyR0Xe # The password you provided
-      - PGDATA=/var/lib/postgresql/data/pgdata # Recommended for explicit data directory inside volume
+      - POSTGRES_DB=bitwarden_vault
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=sCMH1tWAZ5HpIoxC4z3Bpe9Jr46zNFPkjqFXQphT9IhD7jtRHZ1Nt1JjVmUyR0Xe
+      - PGDATA=/var/lib/postgresql/data/pgdata
 
 volumes:
-  bw-data: # Declares the named volume for Bitwarden data
-  logs:    # Declares the named volume for Bitwarden logs
-  pg-data: # Declares the named volume for PostgreSQL data
+  bw-data:
+  logs:
+  pg-data:
