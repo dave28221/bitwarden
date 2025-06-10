@@ -1,16 +1,1 @@
-version: "3.3"
 
-services:
-  vaultwarden:
-    image: vaultwarden/server:latest
-    container_name: vaultwarden
-    restart: always
-    environment:
-      WEBSOCKET_ENABLED: "true" # Enable WebSocket notifications
-      SIGNUPS_ALLOWED: "false" # Disable open signups
-      ADMIN_TOKEN: "l/eSVe+EfrqZLRUINgrzxu3aeTo27FRDIJ6VKUopOJdPBP5N0LprEt9s1BSqtW2Z"
-    volumes:
-      - ./vw-data:/data
-    ports:
-      - "8082:85"
-      - "3012:3012" # WebSocket
